@@ -69,10 +69,11 @@ async function initialize() {
   return true;
 }
 
-async function createSubForm(data) {
-  console.log('\n🚀 Creating sub form...');
-  console.log('Data:', data);
-  console.log('');
+// Track if we've already navigated to Sub Forms (only need to do once)
+let isOnSubFormsPage = false;
+
+async function navigateToSubForms() {
+  console.log('\n🚀 Navigating to Sub Forms section...');
   
   try {
     // Make sure we're on the right page
@@ -83,7 +84,7 @@ async function createSubForm(data) {
       await page.waitForTimeout(3000);
     }
     
-    // Check if page is responsive by trying to interact with body
+    // Check if page is responsive
     console.log('🔍 Checking if page is interactive...');
     try {
       await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
@@ -93,13 +94,11 @@ async function createSubForm(data) {
       console.log('⚠️  Page load state uncertain, but continuing...\n');
     }
     
-    
     // Step 1: Click "Work Orders & PMs" in the sidebar to select channel
     console.log('🔍 Step 1: Looking for "Work Orders & PMs" in sidebar...');
     
     await page.waitForTimeout(2000);
     
-    // Click the channel in the sidebar (not the header)
     const sidebarChannelSelectors = [
       'div.css-901oao.css-cens5h:has-text("Work Orders & PMs")',
       'div.css-cens5h:has-text("Work Orders & PMs")',
@@ -156,6 +155,28 @@ async function createSubForm(data) {
     console.log('✅ Clicked "Sub Forms" option\n');
     
     await page.waitForTimeout(1500);
+    
+    isOnSubFormsPage = true;
+    console.log('✅ Navigation complete - now on Sub Forms page\n');
+    
+  } catch (error) {
+    console.error('\n❌ Navigation error:', error.message);
+    throw error;
+  }
+}
+
+async function createSubForm(data) {
+  console.log('\n🚀 Creating sub form...');
+  console.log('Data:', data);
+  console.log('');
+  
+  try {
+    // Only navigate if we haven't already
+    if (!isOnSubFormsPage) {
+      await navigateToSubForms();
+    } else {
+      console.log('✅ Already on Sub Forms page, skipping navigation\n');
+    }
     
     // Step 3: Click the "New" button
     console.log('🔍 Step 3: Looking for "New" button...');

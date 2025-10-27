@@ -169,9 +169,6 @@ def process_subform(json_filename, folder='1'):
         # Create field data as a boxed table with 2 columns
         field_data = []
         
-        # Header row with field number - WHITE text on dark background (spans both columns)
-        field_data.append([Paragraph(f"<b>FIELD {idx}</b>", header_style), ''])
-        
         # Field details - Label on left (30%), Value on right (70%)
         # Note: Removed Task and Frequency as they are redundant/root-level info
         field_data.append([
@@ -201,13 +198,9 @@ def process_subform(json_filename, folder='1'):
         value_width = content_width * 0.70
         field_table = Table(field_data, colWidths=[label_width, value_width])
         field_table.setStyle(TableStyle([
-            # Header row (field number) styling - dark background with WHITE text, span both columns
-            ('SPAN', (0, 0), (1, 0)),  # Merge first row across both columns
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#000000')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-            # All other rows
-            ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-            ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+            # All rows styling
+            ('BACKGROUND', (0, 0), (-1, -1), colors.white),
+            ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
             # Grid and borders
             ('GRID', (0, 0), (-1, -1), 1, colors.black),
             ('BOX', (0, 0), (-1, -1), 2, colors.black),
@@ -220,11 +213,11 @@ def process_subform(json_filename, folder='1'):
             ('TOPPADDING', (0, 0), (-1, -1), 2),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
             # Vertical line between columns (more prominent)
-            ('LINEAFTER', (0, 1), (0, -1), 2, colors.black),
+            ('LINEAFTER', (0, 0), (0, -1), 2, colors.black),
         ]))
         
         story.append(field_table)
-        story.append(Spacer(1, 0.04*inch))
+        story.append(Spacer(1, 0.12*inch))  # Increased spacing between fields
     
     # Build PDF
     doc.build(story)
