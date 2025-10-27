@@ -1,0 +1,29 @@
+{
+  "name": "coasty-automation",
+  "version": "1.0.0",
+  "description": "Browser automation tool for Coast app using BrowserBase",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "node test.js",
+    "start": "node index.js",
+    "local": "node local-automation.js",
+    "local-profile": "node local-with-profile.js",
+    "setup-auth": "node setup-auth.js",
+    "playwright": "node playwright/playwright-local.js",
+    "playwright-fresh": "node playwright/playwright-fresh.js",
+    "playwright-debug": "node playwright/playwright-debug.js",
+    "create-subform": "node playwright/create-subform.js",
+    "live": "node playwright/create-subform-live.js",
+    "test-page": "node playwright/test-page.js"
+  },
+  "keywords": ["automation", "browserbase", "coast"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "playwright": "^1.40.0",
+    "csv-parse": "^5.5.2"
+  }
+}
+
