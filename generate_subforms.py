@@ -11,7 +11,7 @@ import os
 from collections import defaultdict
 
 # Configuration
-CSV_FILE = 'checklists.csv'
+CSV_FILE = 'checklist.csv'
 OUTPUT_DIR = 'subforms'
 TEST_MODE = False  # Set to False to generate all subforms
 
