@@ -8,5 +8,4 @@ playwright-report/
 test-results/
 playwright-session/
 subforms_pdf/*
-subforms_pdf_ai/*
 subforms/*

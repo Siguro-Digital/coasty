@@ -1,0 +1,35 @@
+═══════════════════════════════════════════════════════════════
+           COASTY AUTOMATION - SUPER SIMPLE GUIDE (Mac)
+═══════════════════════════════════════════════════════════════
+
+                    ⭐ JUST DOUBLE-CLICK! ⭐
+
+═══════════════════════════════════════════════════════════════
+
+STEP 1: INSTALL NODE.JS (Do this once)
+   └─→ Go to: https://nodejs.org/
+   └─→ Click "Download" (big green button)
+   └─→ Install it
+   └─→ Restart your computer
+
+═══════════════════════════════════════════════════════════════
+
+STEP 2: SETUP (Do this once - Just double-click!)
+   └─→ Double-click:  Setup.command
+   └─→ Wait 2-5 minutes
+   └─→ Done! ✅
+
+═══════════════════════════════════════════════════════════════
+
+STEP 3: RUN THE PROGRAM (Every time you want to use it)
+   └─→ Double-click:  Run.command
+   └─→ Follow the menu on screen
+
+═══════════════════════════════════════════════════════════════
+
+That's it! No Terminal, no commands, just double-click!
+
+If double-clicking doesn't work, see QUICK_START.md for help.
+
+═══════════════════════════════════════════════════════════════
+

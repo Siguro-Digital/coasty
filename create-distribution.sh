@@ -28,17 +28,20 @@ echo "Copying files..."
 cp *.js "$DIST_DIR/" 2>/dev/null || true
 cp *.json "$DIST_DIR/" 2>/dev/null || true
 cp *.md "$DIST_DIR/" 2>/dev/null || true
-cp *.csv "$DIST_DIR/" 2>/dev/null || true
+cp *.txt "$DIST_DIR/" 2>/dev/null || true
+# Note: CSV files excluded - PDFs are pre-generated
 cp *.sh "$DIST_DIR/" 2>/dev/null || true
-cp *.ps1 "$DIST_DIR/" 2>/dev/null || true
-cp generate_*.py "$DIST_DIR/" 2>/dev/null || true
+cp *.command "$DIST_DIR/" 2>/dev/null || true
+# Note: Python generation scripts excluded - PDFs are pre-generated
 
 # Copy directories
 cp -r playwright "$DIST_DIR/" 2>/dev/null || true
-cp -r subforms "$DIST_DIR/" 2>/dev/null || true
+# Copy pre-generated PDFs, exclude JSON subforms folder
+cp -r subforms_pdf_ai "$DIST_DIR/" 2>/dev/null || true
 
 # Make scripts executable
 chmod +x "$DIST_DIR"/*.sh 2>/dev/null || true
+chmod +x "$DIST_DIR"/*.command 2>/dev/null || true
 
 # Create zip
 echo "Creating zip file..."
@@ -52,11 +55,14 @@ rm -rf "$DIST_DIR"
 echo ""
 echo "✅ Distribution package created: $ZIP_FILE"
 echo ""
-echo "This zip file contains everything needed to run Coasty Automation."
-echo "Share this file along with instructions to:"
-echo "  1. Install Node.js from https://nodejs.org/"
-echo "  2. Extract the zip"
-echo "  3. Run ./setup.sh (Mac/Linux) or .\\setup.ps1 (Windows)"
-echo "  4. Run ./run.sh (Mac/Linux) or .\\run.ps1 (Windows)"
+echo "📦 This zip file contains everything needed to run Coasty Automation."
+echo ""
+echo "📋 Instructions for recipient:"
+echo "  1. Install Node.js from https://nodejs.org/ (one time)"
+echo "  2. Extract the zip file"
+echo "  3. Double-click 'Setup.command'"
+echo "  4. Double-click 'Run.command' to use"
+echo ""
+echo "💡 Tip: Tell them to look for README_FOR_RECIPIENT.txt for simple instructions!"
 echo ""
 

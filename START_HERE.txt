@@ -1,0 +1,44 @@
+═══════════════════════════════════════════════════════════════
+  COASTY AUTOMATION - START HERE
+═══════════════════════════════════════════════════════════════
+
+QUICK SETUP INSTRUCTIONS:
+
+1. INSTALL NODE.JS (if not already installed)
+   → Go to: https://nodejs.org/
+   → Download and install the LTS version
+   → Restart your computer
+
+2. EXTRACT THIS ZIP FILE
+   → Extract all files to a folder (e.g., Desktop/coasty)
+
+3. RUN SETUP (one time only)
+   
+   On Mac/Linux:
+   → Open Terminal
+   → Type: cd /path/to/extracted/folder
+   → Type: chmod +x setup.sh run.sh
+   → Type: ./setup.sh
+   
+   On Windows:
+   → Open PowerShell (right-click folder, "Open PowerShell here")
+   → Type: .\setup.ps1
+
+4. RUN THE PROGRAM
+   
+   On Mac/Linux:
+   → Type: ./run.sh
+   
+   On Windows:
+   → Type: .\run.ps1
+
+That's it! Follow the on-screen menu to upload PDFs.
+
+═══════════════════════════════════════════════════════════════
+
+NEED HELP?
+→ See QUICK_START.md for detailed instructions
+→ See SETUP_GUIDE.md for troubleshooting
+
+═══════════════════════════════════════════════════════════════
+

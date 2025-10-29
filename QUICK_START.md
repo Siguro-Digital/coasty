@@ -1,6 +1,28 @@
 # Coasty Automation - Quick Start Guide
 
-## For Non-Developers - Easy Setup!
+## For Non-Developers - SUPER EASY! (Mac Only)
+
+### ⭐ EASIEST METHOD: Just Double-Click! ⭐
+
+**STEP 1: Install Node.js** (One Time)
+1. Go to: **https://nodejs.org/**
+2. Click the big green **"Download"** button
+3. Install it
+4. **Restart your computer**
+
+**STEP 2: Setup** (One Time - Just Double-Click!)
+- Find `Setup.command` in the folder
+- **Double-click it**
+- Wait 2-5 minutes
+- Done! ✅
+
+**STEP 3: Run the Program** (Every Time - Just Double-Click!)
+- **Double-click `Run.command`**
+- Follow the on-screen menu
+
+---
+
+## Alternative: Using Terminal (If Double-Click Doesn't Work)
 
 ### Step 1: Install Node.js (One Time Setup)
 
@@ -22,29 +44,12 @@
    ./setup.sh
    ```
 
-**On Windows:**
-1. Open PowerShell (not Command Prompt)
-2. Navigate to the Coasty folder:
-   ```powershell
-   cd C:\path\to\coasty
-   ```
-3. Run:
-   ```powershell
-   .\setup.ps1
-   ```
-
 Wait a few minutes for everything to install.
 
 ### Step 3: Run the Program
 
-**On Mac/Linux:**
 ```bash
 ./run.sh
-```
-
-**On Windows:**
-```powershell
-.\run.ps1
 ```
 
 **Or simply:**
@@ -62,15 +67,11 @@ Once running, follow the on-screen instructions to upload PDFs to Coast app.
 - Node.js isn't installed or you need to restart your computer
 - Reinstall from https://nodejs.org/
 
-**"permission denied" (Mac/Linux)**
+**"permission denied"**
 - Make scripts executable:
   ```bash
-  chmod +x setup.sh run.sh
+  chmod +x setup.sh run.sh Setup.command Run.command
   ```
-
-**Scripts won't run (Windows)**
-- Use PowerShell, not Command Prompt
-- Allow scripts: `Set-ExecutionPolicy RemoteSigned`
 
 ## Need Help?
 

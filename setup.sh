@@ -25,14 +25,7 @@ fi
 
 echo "✅ npm found: $(npm --version)"
 
-# Check if Python 3 is installed
-if ! command -v python3 &> /dev/null; then
-    echo "⚠️  Python 3 is not installed."
-    echo "   PDF generation will not work without Python 3"
-    echo "   Visit: https://www.python.org/downloads/"
-else
-    echo "✅ Python 3 found: $(python3 --version)"
-fi
+# Note: Python is not required - PDFs are pre-generated
 
 echo ""
 echo "📦 Installing Node.js dependencies..."
@@ -52,31 +45,16 @@ if [ $? -ne 0 ]; then
     echo "   You may need to run: npx playwright install chromium"
 fi
 
-# Check if Python dependencies are needed
-if command -v python3 &> /dev/null; then
-    echo ""
-    echo "🐍 Checking Python dependencies..."
-    
-    if python3 -c "import reportlab" 2>/dev/null; then
-        echo "✅ Python dependencies already installed"
-    else
-        echo "📦 Installing Python dependencies for PDF generation..."
-        python3 -m venv venv 2>/dev/null || true
-        source venv/bin/activate 2>/dev/null || true
-        pip install reportlab --quiet 2>/dev/null || {
-            echo "⚠️  Warning: Could not install Python PDF dependencies"
-            echo "   PDF generation may not work"
-        }
-    fi
-fi
+# Note: Python dependencies not needed - PDFs are pre-generated and included
 
 echo ""
 echo "✅ Setup complete!"
 echo ""
+echo "📋 PDFs are already included - no generation needed!"
+echo ""
 echo "To run the automation, use:"
 echo "  npm run live"
 echo ""
-echo "Or use the launcher script:"
-echo "  ./run.sh"
+echo "Or double-click: Run.command"
 echo ""
 
