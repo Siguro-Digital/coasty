@@ -1,6 +1,6 @@
 import { chromium } from 'playwright';
-import { readFileSync, readdirSync } from 'fs';
-import { join } from 'path';
+import { readFileSync, readdirSync, existsSync } from 'fs';
+import { join, basename } from 'path';
 
 /**
  * LIVE SESSION VERSION - Browser stays open between runs!
@@ -28,7 +28,7 @@ async function initialize() {
   // Launch with persistent context
   context = await chromium.launchPersistentContext(CONTEXT_DIR, {
     headless: false,
-    viewport: { width: 1200, height: 750 },
+    viewport: { width: 1400, height: 750 },
     slowMo: 600,
   });
   
@@ -166,8 +166,14 @@ async function navigateToSubForms() {
 }
 
 async function createSubForm(data) {
+  // Extract form name from PDF filename (without extension) to preserve hyphens
+  const pdfPath = data.pdfPath;
+  const fileName = basename(pdfPath);
+  const formName = fileName.replace(/\.pdf$/i, ''); // Remove .pdf extension, case-insensitive
+  
   console.log('\n🚀 Creating sub form...');
-  console.log('Data:', data);
+  console.log(`Form Name: ${formName}`);
+  console.log(`PDF Path: ${pdfPath}`);
   console.log('');
   
   try {
@@ -278,10 +284,10 @@ async function createSubForm(data) {
           await nameInput.click({ clickCount: 3 });
           await page.waitForTimeout(300);
           
-          // Type the new name
-          await nameInput.type(data.name);
+          // Type the new name (extracted from filename)
+          await nameInput.type(formName);
           
-          console.log(`   ✅ Name filled: "${data.name}" using: ${selector}`);
+          console.log(`   ✅ Name filled: "${formName}" using: ${selector}`);
           nameInputFilled = true;
           break;
         }
@@ -313,7 +319,6 @@ async function createSubForm(data) {
       console.log('   Found clickable upload area (Level 3 DIV)');
       
       // Set up file chooser listener BEFORE clicking to intercept the native dialog
-      const pdfPath = data.pdfPath;
       console.log(`📁 Preparing to upload: ${pdfPath}`);
       
       const [fileChooser] = await Promise.all([
@@ -445,6 +450,71 @@ async function batchProcessCSV(csvPath, limit = null) {
   }
 }
 
+async function findPDFByName(pdfBaseDir, subformName) {
+  // Try all folder numbers 1-8
+  for (let folderNum = 1; folderNum <= 8; folderNum++) {
+    const folderPath = join(pdfBaseDir, folderNum.toString());
+    const pdfPath = join(folderPath, `${subformName}.pdf`);
+    
+    if (existsSync(pdfPath)) {
+      return { pdfPath, folderNum };
+    }
+  }
+  
+  return null;
+}
+
+async function uploadSinglePDFByName(pdfBaseDir = '/Users/mcardle/Sites/coasty/subforms_pdf_ai') {
+  return new Promise((resolve) => {
+    // Remove the main stdin listener temporarily
+    const listeners = process.stdin.listeners('data');
+    process.stdin.removeAllListeners('data');
+    
+    // Switch to line mode temporarily to read the subform name
+    process.stdin.setRawMode(false);
+    process.stdin.resume();
+    
+    const isAI = pdfBaseDir.includes('subforms_pdf_ai');
+    const pdfType = isAI ? 'AI-optimized' : 'standard';
+    console.log(`\n📝 Enter subform name for ${pdfType} PDF (e.g., 4.6-EX. PANEL 432-Quarterly):`);
+    console.log('   (Press Enter when done, or Ctrl+C to cancel)\n');
+    
+    process.stdin.once('data', async (data) => {
+      const input = data.toString().trim();
+      
+      // Restore raw mode and listeners
+      setupReadline();
+      listeners.forEach(listener => process.stdin.on('data', listener));
+      
+      if (!input) {
+        console.log('❌ No name entered. Cancelled.\n');
+        resolve(false);
+        return;
+      }
+      
+      console.log(`\n🔍 Searching for: ${input}`);
+      
+      const result = await findPDFByName(pdfBaseDir, input);
+      
+      if (result) {
+        console.log(`✅ Found PDF in folder ${result.folderNum}`);
+        console.log(`   Path: ${result.pdfPath}\n`);
+        
+        await createSubForm({
+          pdfPath: result.pdfPath
+        });
+      } else {
+        console.log(`❌ PDF not found: ${input}.pdf`);
+        console.log('   Make sure the name matches exactly (including spaces and punctuation)\n');
+      }
+      
+      // Show menu after completion
+      await showMenu();
+      resolve(true);
+    });
+  });
+}
+
 async function batchProcessPDFs(pdfDir, folderNumber, limit = null) {
   const folderPath = join(pdfDir, folderNumber.toString());
   console.log(`\n📁 Batch processing PDFs from folder: ${folderNumber}`);
@@ -469,7 +539,6 @@ async function batchProcessPDFs(pdfDir, folderNumber, limit = null) {
       console.log(`\n[${i + 1}/${itemsToProcess}] Processing: ${formName}`);
       
       const success = await createSubForm({
-        name: formName,
         pdfPath: pdfPath
       });
       
@@ -517,7 +586,9 @@ async function showMenu() {
   console.log('  Folder 7: 175 PDFs (starts with 7)');
   console.log('  Folder 8: 14 PDFs (starts with 8)');
   console.log('\nCommands:');
-  console.log('  c - Upload single test PDF (from folder 1)');
+  console.log('  c - Upload single test PDF (from folder 2)');
+  console.log('  p - Upload single AI-optimized PDF by name (default)');
+  console.log('  a - Upload single standard PDF by name');
   console.log('  1-8 - Batch upload folder (first 5 PDFs)');
   console.log('  F1-F8 - Batch upload FULL folder (all PDFs!)');
   console.log('  r - Reload Coast app page');
@@ -528,9 +599,10 @@ async function showMenu() {
 }
 
 async function handleCommand(key) {
-  const pdfBaseDir = '/Users/mcardle/Sites/coasty/subforms_pdf';
+  const pdfBaseDir = '/Users/mcardle/Sites/coasty/subforms_pdf_ai';  // Default to AI-optimized PDFs
+  const pdfStandardDir = '/Users/mcardle/Sites/coasty/subforms_pdf';
   
-  switch (key) {
+  switch (key.trim()) {
     case 'c':
       // Test with the 2.16-ACCU-Semi-Annual.pdf file from folder 2
       const testPdfName = '2.16-ACCU-Semi-Annual';
@@ -541,10 +613,17 @@ async function handleCommand(key) {
       console.log(`   PDF Path: ${testPdfPath}\n`);
       
       await createSubForm({
-        name: testPdfName,
         pdfPath: testPdfPath
       });
       break;
+    
+    case 'p':
+      await uploadSinglePDFByName(pdfBaseDir);  // Now defaults to AI-optimized
+      return false; // Don't show menu immediately - it will be shown after input
+    
+    case 'a':
+      await uploadSinglePDFByName(pdfStandardDir);  // 'a' now uses standard PDFs
+      return false; // Don't show menu immediately - it will be shown after input
     
     // Batch process folders (first 5)
     case '1':
@@ -555,7 +634,7 @@ async function handleCommand(key) {
     case '6':
     case '7':
     case '8':
-      await batchProcessPDFs(pdfBaseDir, key, 5);
+      await batchProcessPDFs(pdfBaseDir, key, 5);  // Uses AI-optimized PDFs by default
       break;
     
     // Full folder processing
@@ -608,7 +687,7 @@ async function main() {
   await showMenu();
   
   process.stdin.on('data', async (key) => {
-    const keyStr = key.toString();
+    const keyStr = key.toString().trim();
     
     if (keyStr === '\u0003') { // Ctrl+C
       console.log('\n\nExiting...');
@@ -616,9 +695,12 @@ async function main() {
       process.exit(0);
     }
     
-    await handleCommand(keyStr);
-    lastKey = keyStr; // Track last key for multi-key commands
-    await showMenu();
+    // For 'p' command, handleCommand will manage its own flow
+    const handled = await handleCommand(keyStr);
+    if (handled !== false) {
+      lastKey = keyStr; // Track last key for multi-key commands
+      await showMenu();
+    }
   });
 }
 

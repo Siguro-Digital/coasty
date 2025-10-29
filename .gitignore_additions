@@ -1,0 +1,7 @@
+# Setup artifacts
+setup.log
+*.log
+
+# Executables (if created)
+*.exe
+*.app

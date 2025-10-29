@@ -15,7 +15,9 @@
     "playwright-debug": "node playwright/playwright-debug.js",
     "create-subform": "node playwright/create-subform.js",
     "live": "node playwright/create-subform-live.js",
-    "test-page": "node playwright/test-page.js"
+    "test-page": "node playwright/test-page.js",
+    "setup": "node -e \"console.log('Please run ./setup.sh (Mac/Linux) or .\\setup.ps1 (Windows)')\"",
+    "postinstall": "npx playwright install chromium || true"
   },
   "keywords": ["automation", "browserbase", "coast"],
   "author": "",

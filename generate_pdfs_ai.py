@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 Script to generate PDF files from JSON subforms.
-PDFs are optimized for AI to read and digest with clear structure.
+PDFs are formatted as explicit instructions for AI to create forms.
+Each field is presented as a clear step with field type and content.
 """
 
 import json
@@ -17,7 +18,7 @@ from reportlab.lib.enums import TA_LEFT, TA_CENTER
 
 # Configuration
 SUBFORMS_DIR = 'subforms'
-OUTPUT_DIR = 'subforms_pdf'
+OUTPUT_DIR = 'subforms_pdf_ai'
 TEST_MODE = False  # Set to False to generate all PDFs
 TEST_SUBFORM = '4.6-EX. PANEL 432-Quarterly'  # Change this to test different subforms
 
@@ -125,45 +126,44 @@ def process_subform(json_filename, folder='1'):
     body_style = ParagraphStyle(
         'CustomBody',
         parent=styles['BodyText'],
-        fontSize=7,
+        fontSize=8,
         textColor=colors.black,
-        spaceAfter=0,
+        spaceAfter=6,
         spaceBefore=0,
         alignment=TA_LEFT,
-        leading=9
+        leading=10
     )
     
-    # Custom header style - WHITE text for field headers
-    header_style = ParagraphStyle(
-        'HeaderStyle',
+    # Custom instruction style - bold, larger for step headers
+    instruction_style = ParagraphStyle(
+        'InstructionStyle',
         parent=styles['BodyText'],
-        fontSize=7,
-        textColor=colors.white,  # WHITE text
-        spaceAfter=0,
-        spaceBefore=0,
+        fontSize=9,
+        textColor=colors.black,
+        spaceAfter=4,
+        spaceBefore=8,
         alignment=TA_LEFT,
         fontName='Helvetica-Bold',
-        leading=9
+        leading=11
     )
     
-    # Custom info text style for contractor headers
-    info_style = ParagraphStyle(
-        'InfoStyle',
+    # Custom content style - for field content
+    content_style = ParagraphStyle(
+        'ContentStyle',
         parent=styles['BodyText'],
-        fontSize=7,
+        fontSize=8,
         textColor=colors.black,
-        spaceAfter=0,
+        spaceAfter=3,
         spaceBefore=0,
         alignment=TA_LEFT,
-        fontName='Helvetica',
-        leading=9
+        leading=10
     )
     
     # Calculate content width
     content_width = page_width - 0.3*inch
     
     # Add title box
-    title_data = [[Paragraph(f"<b>SUBFORM: {data['name']}</b>", title_style)]]
+    title_data = [[Paragraph(f"<b>INSTRUCTIONS FOR CREATING SUBFORM: {data['name']}</b>", title_style)]]
     title_table = Table(title_data, colWidths=[content_width])
     title_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), colors.black),
@@ -175,9 +175,15 @@ def process_subform(json_filename, folder='1'):
         ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
     ]))
     story.append(title_table)
+    story.append(Spacer(1, 0.12*inch))
+    
+    # Add instructions header
+    story.append(Paragraph("Follow these steps to create the form fields:", instruction_style))
     story.append(Spacer(1, 0.08*inch))
     
-    # Add fields as table rows with two-column layout
+    # Track step number
+    step_number = 0
+    
     # First, check if contractors differ across fields
     contractors = [field.get('jb_contractor_assignment', '').strip() for field in data['fields']]
     contractors_set = set([c for c in contractors if c])  # Get unique non-empty contractors
@@ -201,99 +207,59 @@ def process_subform(json_filename, folder='1'):
                 should_add_header = True
         
         if should_add_header:
-            # Create contractor info field - styled like a normal field (two-column layout)
-            label_width = content_width * 0.30
-            value_width = content_width * 0.70
+            step_number += 1
+            # Create instruction for Info Text field
+            instruction_text = f"<b>STEP {step_number}: Create an Info Text field</b>"
+            story.append(Paragraph(instruction_text, instruction_style))
             
-            contractor_field_data = [
-                [
-                    Paragraph(f"<b>Contractor:</b>", body_style),
-                    Paragraph(contractor, body_style)
-                ],
-                [
-                    Paragraph(f"<b>Type:</b>", body_style),
-                    Paragraph("Info Text", body_style)
-                ]
-            ]
+            content_text = f"<b>Content:</b> {contractor}"
+            story.append(Paragraph(content_text, content_style))
             
-            contractor_table = Table(contractor_field_data, colWidths=[label_width, value_width])
-            contractor_table.setStyle(TableStyle([
-                # All rows styling - same as normal fields
-                ('BACKGROUND', (0, 0), (-1, -1), colors.white),
-                ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
-                # Grid and borders - same as normal fields
-                ('GRID', (0, 0), (-1, -1), 1, colors.black),
-                ('BOX', (0, 0), (-1, -1), 2, colors.black),
-                # Alignment - labels on left, values on left
-                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-                # Padding - same as normal fields
-                ('LEFTPADDING', (0, 0), (-1, -1), 3),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 3),
-                ('TOPPADDING', (0, 0), (-1, -1), 2),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
-                # Vertical line between columns (more prominent)
-                ('LINEAFTER', (0, 0), (0, -1), 2, colors.black),
-            ]))
-            
-            story.append(contractor_table)
-            story.append(Spacer(1, 0.12*inch))  # Same spacing as between normal fields
+            story.append(Spacer(1, 0.1*inch))
         
         # Update previous contractor for next iteration
         previous_contractor = contractor
         
-        # Create field data as a boxed table with 2 columns
-        field_data = []
+        # Create instruction for the main field
+        step_number += 1
         
-        # Field details - Label on left (30%), Value on right (70%)
-        # Keep Contractor in the main field box
-        field_data.append([
-            Paragraph(f"<b>Contractor:</b>", body_style),
-            Paragraph(contractor if contractor else '', body_style)
-        ])
-        field_data.append([
-            Paragraph(f"<b>Description:</b>", body_style),
-            Paragraph(field['description'], body_style)
-        ])
+        # Determine field type
+        field_type = field.get('type', 'Text')
+        if 'options' in field and field['options']:
+            field_type = 'Single Select'
         
-        if 'type' in field:
-            field_data.append([
-                Paragraph(f"<b>Type:</b>", body_style),
-                Paragraph(field['type'], body_style)
-            ])
+        # Build instruction
+        instruction_text = f"<b>STEP {step_number}: Create a {field_type} field</b>"
+        story.append(Paragraph(instruction_text, instruction_style))
         
-        if 'options' in field:
+        # Add field properties
+        properties = []
+        
+        # Contractor
+        if contractor:
+            properties.append(f"<b>Contractor:</b> {contractor}")
+        
+        # Description (with inspection task prefix if available)
+        description = field.get('description', '')
+        inspection_task = field.get('inspection_task', '')
+        if inspection_task and description:
+            description = f"{inspection_task}: {description}"
+        elif inspection_task:
+            description = inspection_task
+        
+        if description:
+            properties.append(f"<b>Description:</b> {description}")
+        
+        # Options (if Single Select)
+        if 'options' in field and field['options']:
             options_str = ', '.join(field['options'])
-            field_data.append([
-                Paragraph(f"<b>Options:</b>", body_style),
-                Paragraph(options_str, body_style)
-            ])
+            properties.append(f"<b>Options:</b> {options_str}")
         
-        # Create table for this field with two columns (30% / 70% split)
-        label_width = content_width * 0.30
-        value_width = content_width * 0.70
-        field_table = Table(field_data, colWidths=[label_width, value_width])
-        field_table.setStyle(TableStyle([
-            # All rows styling
-            ('BACKGROUND', (0, 0), (-1, -1), colors.white),
-            ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
-            # Grid and borders
-            ('GRID', (0, 0), (-1, -1), 1, colors.black),
-            ('BOX', (0, 0), (-1, -1), 2, colors.black),
-            # Alignment - labels on left, values on left
-            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            # Padding
-            ('LEFTPADDING', (0, 0), (-1, -1), 3),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 3),
-            ('TOPPADDING', (0, 0), (-1, -1), 2),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
-            # Vertical line between columns (more prominent)
-            ('LINEAFTER', (0, 0), (0, -1), 2, colors.black),
-        ]))
+        # Add all properties
+        for prop in properties:
+            story.append(Paragraph(prop, content_style))
         
-        story.append(field_table)
-        story.append(Spacer(1, 0.12*inch))  # Increased spacing between fields
+        story.append(Spacer(1, 0.12*inch))  # Spacing between steps
     
     # Build PDF
     doc.build(story)

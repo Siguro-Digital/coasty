@@ -34,6 +34,18 @@ def main():
             if not naming_convention:
                 continue
             
+            # Fix naming conventions that start with a hyphen
+            # Extract section number from Inspection Task field
+            if naming_convention.startswith('-'):
+                inspection_task = row.get('Inspection Task', '').strip()
+                if inspection_task:
+                    # Extract section number (e.g., "2.16" from "2.16-SA-ACCU-3")
+                    parts = inspection_task.split('-')
+                    if parts and parts[0]:
+                        section_number = parts[0]
+                        # Prepend section number to naming convention
+                        naming_convention = section_number + naming_convention
+            
             # Create field object from row
             measurement_type = row.get('Measurement Type', '').strip()
             response_type = row.get('Response Type', '').strip()
