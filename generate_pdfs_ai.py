@@ -27,9 +27,9 @@ def get_folder_name(filename):
     # Remove .json extension
     name = filename.replace('.json', '')
     
-    # Files starting with hyphen go in folder "1"
+    # Files starting with hyphen go in folder "-"
     if name.startswith('-'):
-        return '1'
+        return '-'
     
     # Files starting with a number like "2.x" go in folder "2"
     if name[0].isdigit():
@@ -184,26 +184,39 @@ def process_subform(json_filename, folder='1'):
     # Track step number
     step_number = 0
     
-    # First, check if contractors differ across fields
-    contractors = [field.get('jb_contractor_assignment', '').strip() for field in data['fields']]
-    contractors_set = set([c for c in contractors if c])  # Get unique non-empty contractors
-    has_different_contractors = len(contractors_set) > 1
+    # Get all task assignments from fields
+    task_assignments = [field.get('jb_task_assignment', '').strip() for field in data['fields']]
+    task_assignments_set = set([t for t in task_assignments if t])  # Get unique non-empty task assignments
+    has_single_task_assignment = len(task_assignments_set) == 1
+    has_different_task_assignments = len(task_assignments_set) > 1
     
-    previous_contractor = None
+    # If there's only ONE unique task assignment value, add it ONCE at the top as Step 1
+    if has_single_task_assignment:
+        single_task_assignment = list(task_assignments_set)[0]
+        step_number += 1
+        instruction_text = f"<b>STEP {step_number}: Create an Info Text field</b>"
+        story.append(Paragraph(instruction_text, instruction_style))
+        
+        content_text = f"<b>Content:</b> {single_task_assignment}"
+        story.append(Paragraph(content_text, content_style))
+        
+        story.append(Spacer(1, 0.1*inch))
+    
+    previous_task_assignment = None
     
     for idx, field in enumerate(data['fields'], 1):
-        contractor = field.get('jb_contractor_assignment', '').strip()
+        task_assignment = field.get('jb_task_assignment', '').strip()
         
-        # Add contractor header field ONLY if:
-        # 1. Contractors differ across fields in this subform, AND
-        # 2. Contractor is different from previous field (or this is the first field with a contractor)
+        # Add task assignment header field ONLY if:
+        # 1. Task assignments differ across fields in this subform, AND
+        # 2. Task assignment is different from previous field (or this is the first field with a task assignment)
         should_add_header = False
-        if has_different_contractors:
-            if idx == 1 and contractor:
-                # First field - add header if it has a contractor and contractors differ
+        if has_different_task_assignments:
+            if idx == 1 and task_assignment:
+                # First field - add header if it has a task assignment and task assignments differ
                 should_add_header = True
-            elif contractor and contractor != previous_contractor:
-                # Contractor changed - add header
+            elif task_assignment and task_assignment != previous_task_assignment:
+                # Task assignment changed - add header
                 should_add_header = True
         
         if should_add_header:
@@ -212,13 +225,13 @@ def process_subform(json_filename, folder='1'):
             instruction_text = f"<b>STEP {step_number}: Create an Info Text field</b>"
             story.append(Paragraph(instruction_text, instruction_style))
             
-            content_text = f"<b>Content:</b> {contractor}"
+            content_text = f"<b>Content:</b> {task_assignment}"
             story.append(Paragraph(content_text, content_style))
             
             story.append(Spacer(1, 0.1*inch))
         
-        # Update previous contractor for next iteration
-        previous_contractor = contractor
+        # Update previous task assignment for next iteration
+        previous_task_assignment = task_assignment
         
         # Create instruction for the main field
         step_number += 1
@@ -235,9 +248,9 @@ def process_subform(json_filename, folder='1'):
         # Add field properties
         properties = []
         
-        # Contractor
-        if contractor:
-            properties.append(f"<b>Contractor:</b> {contractor}")
+        # Task Assignment (only add if there are multiple different values - single value already added at top)
+        if has_different_task_assignments and task_assignment:
+            properties.append(f"<b>Task Assignment:</b> {task_assignment}")
         
         # Description (with inspection task prefix if available)
         description = field.get('description', '')

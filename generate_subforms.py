@@ -34,17 +34,8 @@ def main():
             if not naming_convention:
                 continue
             
-            # Fix naming conventions that start with a hyphen
-            # Extract section number from Inspection Task field
-            if naming_convention.startswith('-'):
-                inspection_task = row.get('Inspection Task', '').strip()
-                if inspection_task:
-                    # Extract section number (e.g., "2.16" from "2.16-SA-ACCU-3")
-                    parts = inspection_task.split('-')
-                    if parts and parts[0]:
-                        section_number = parts[0]
-                        # Prepend section number to naming convention
-                        naming_convention = section_number + naming_convention
+            # Keep forms starting with '-' as separate forms (don't merge with numbered forms)
+            # Forms starting with '-' will be placed in the '-' subfolder
             
             # Create field object from row
             measurement_type = row.get('Measurement Type', '').strip()
@@ -57,7 +48,7 @@ def main():
             field = {
                 'inspection_task': row.get('Inspection Task', '').strip(),
                 'frequency': row.get('Frequency', '').strip(),
-                'jb_contractor_assignment': row.get('JB Contractor Assignment', '').strip(),
+                'jb_task_assignment': row.get('JB Task Assignment', '').strip(),
                 'description': description
             }
             
@@ -88,24 +79,51 @@ def main():
             create_subform_json(naming_convention, fields)
         print(f"\nCreated {len(subforms)} subforms")
 
+def extract_sort_key(inspection_task):
+    """
+    Extract a sort key from inspection task string.
+    Extracts the number at the end (before any trailing letters).
+    Returns (number, suffix_letters) for sorting.
+    """
+    import re
+    
+    if not inspection_task:
+        return (999999, '')  # Put empty values at the end
+    
+    # Try to find a number at the end, possibly followed by letters
+    # Pattern: -NUMBER or -NUMBERLETTERS at the end
+    match = re.search(r'-(\d+)([A-Za-z]*)$', inspection_task)
+    if match:
+        number = int(match.group(1))
+        suffix = match.group(2) or ''
+        return (number, suffix)
+    
+    # If no number found, return high number to sort to end
+    return (999999, inspection_task)
+
 def create_subform_json(naming_convention, fields):
     """Create a JSON file for a single subform"""
     # Sanitize filename (replace invalid characters)
     safe_filename = naming_convention.replace('/', '-').replace('\\', '-')
+    
+    # Sort fields by the number at the end of inspection_task
+    sorted_fields = sorted(fields, key=lambda f: extract_sort_key(f.get('inspection_task', '')))
+    
+    # All JSON files go in the main subforms directory
     filepath = os.path.join(OUTPUT_DIR, f"{safe_filename}.json")
     
     # Create subform object
     subform = {
         'name': naming_convention,
-        'field_count': len(fields),
-        'fields': fields
+        'field_count': len(sorted_fields),
+        'fields': sorted_fields
     }
     
     # Write JSON file
     with open(filepath, 'w', encoding='utf-8') as jsonfile:
         json.dump(subform, jsonfile, indent=2, ensure_ascii=False)
     
-    print(f"Created: {filepath} ({len(fields)} fields)")
+    print(f"Created: {filepath} ({len(sorted_fields)} fields)")
 
 if __name__ == '__main__':
     main()

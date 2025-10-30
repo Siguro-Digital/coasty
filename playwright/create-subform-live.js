@@ -1,6 +1,10 @@
 import { chromium } from 'playwright';
-import { readFileSync, readdirSync, existsSync } from 'fs';
-import { join, basename } from 'path';
+import { readFileSync, readdirSync, existsSync, writeFileSync } from 'fs';
+import { join, basename, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 /**
  * LIVE SESSION VERSION - Browser stays open between runs!
@@ -47,7 +51,7 @@ async function initialize() {
     console.log('⚠️  Navigation timeout, but continuing...');
   }
   
-  await page.waitForTimeout(3000);
+  await page.waitForTimeout(1500);
   
   // Check if we need to login
   const currentUrl = page.url();
@@ -60,7 +64,7 @@ async function initialize() {
     
     await waitForEnter();
     
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
     console.log('✅ Login completed!\n');
   } else {
     console.log('✅ Already logged in!\n');
@@ -81,7 +85,7 @@ async function navigateToSubForms() {
     if (!currentUrl.includes('coastapp.com') || currentUrl.includes('signup')) {
       console.log('⚠️  Not on the right page, navigating...');
       await page.goto('https://app.coastapp.com/');
-      await page.waitForTimeout(3000);
+      await page.waitForTimeout(1500);
     }
     
     // Check if page is responsive
@@ -97,7 +101,7 @@ async function navigateToSubForms() {
     // Step 1: Click "Work Orders & PMs" in the sidebar to select channel
     console.log('🔍 Step 1: Looking for "Work Orders & PMs" in sidebar...');
     
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
     
     const sidebarChannelSelectors = [
       'div.css-901oao.css-cens5h:has-text("Work Orders & PMs")',
@@ -124,7 +128,7 @@ async function navigateToSubForms() {
       throw new Error('Work Orders & PMs channel not found in sidebar');
     }
     
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(500);
     
     // Step 1b: Now click the channel name in the HEADER
     console.log('🔍 Step 1b: Clicking "Work Orders & PMs" in header...');
@@ -142,7 +146,7 @@ async function navigateToSubForms() {
       throw new Error('Work Orders & PMs header not found');
     }
     
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(500);
     
     // Step 2: Click "Sub Forms" option
     console.log('🔍 Step 2: Looking for "Sub Forms" option...');
@@ -154,7 +158,7 @@ async function navigateToSubForms() {
     await subFormsOption.click();
     console.log('✅ Clicked "Sub Forms" option\n');
     
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(500);
     
     isOnSubFormsPage = true;
     console.log('✅ Navigation complete - now on Sub Forms page\n');
@@ -216,7 +220,7 @@ async function createSubForm(data) {
       throw new Error('New button not found');
     }
     
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(500);
     
     // Step 4: Click "Upload a PDF" option
     console.log('🔍 Step 4: Looking for "Upload a PDF" option...');
@@ -248,13 +252,13 @@ async function createSubForm(data) {
       throw new Error('Upload a PDF option not found');
     }
     
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(500);
     
     // Step 5: Replace the "New Sub Form" input with the PDF name
     console.log('📝 Step 5: Replacing form name...');
     
     // Wait a bit for the input to be ready
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(300);
     
     // Find the input that has value="New Sub Form" and replace it
     const nameInputSelectors = [
@@ -278,11 +282,11 @@ async function createSubForm(data) {
           
           // Click to focus
           await nameInput.click();
-          await page.waitForTimeout(300);
+          await page.waitForTimeout(100);
           
           // Triple click to select all text
           await nameInput.click({ clickCount: 3 });
-          await page.waitForTimeout(300);
+          await page.waitForTimeout(100);
           
           // Type the new name (extracted from filename)
           await nameInput.type(formName);
@@ -301,7 +305,7 @@ async function createSubForm(data) {
       throw new Error('Could not fill form name');
     }
     
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(300);
     
     // Step 6: Set up file chooser intercept, click upload area, and set file
     console.log('🔍 Step 6: Setting up PDF upload...');
@@ -332,8 +336,8 @@ async function createSubForm(data) {
       await fileChooser.setFiles(pdfPath);
       console.log(`✅ PDF file selected\n`);
       
-      // Wait for the upload to start processing
-      await page.waitForTimeout(1000);
+      // Wait for the upload to start processing (reduced from 1000ms)
+      await page.waitForTimeout(300);
       
     } catch (error) {
       console.log(`\n❌ Failed to upload PDF: ${error.message}`);
@@ -349,7 +353,7 @@ async function createSubForm(data) {
       await nextButton.click();
       console.log('✅ Clicked "Next" button\n');
       
-      await page.waitForTimeout(1000);
+      await page.waitForTimeout(500);
       
     } catch (error) {
       console.log(`⚠️  Could not find/click Next button: ${error.message}`);
@@ -371,7 +375,7 @@ async function createSubForm(data) {
       console.log('   ✅ Form finished building!\n');
       
       // Wait a moment for the page to stabilize
-      await page.waitForTimeout(1000);
+      await page.waitForTimeout(500);
       
     } catch (error) {
       console.log(`   ⚠️  Building message handling: ${error.message}`);
@@ -388,7 +392,7 @@ async function createSubForm(data) {
       await backButton.click();
       console.log('✅ Clicked back button\n');
       
-      await page.waitForTimeout(1000);
+      await page.waitForTimeout(500);
       
     } catch (error) {
       console.log(`⚠️  Could not find/click back button: ${error.message}\n`);
@@ -439,8 +443,8 @@ async function batchProcessCSV(csvPath, limit = null) {
       }
       
       // Wait between items
-      console.log('⏳ Waiting 2 seconds before next item...');
-      await page.waitForTimeout(2000);
+      console.log('⏳ Waiting 1 second before next item...');
+      await page.waitForTimeout(1000);
     }
     
     console.log('\n🎉 Batch processing completed!');
@@ -515,49 +519,222 @@ async function uploadSinglePDFByName(pdfBaseDir = '/Users/mcardle/Sites/coasty/s
   });
 }
 
-async function batchProcessPDFs(pdfDir, folderNumber, limit = null) {
+// Checkpoint file to track progress
+const CHECKPOINT_FILE = join(__dirname, 'upload_checkpoint.json');
+
+function loadCheckpoint() {
+  try {
+    if (existsSync(CHECKPOINT_FILE)) {
+      const data = readFileSync(CHECKPOINT_FILE, 'utf-8');
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.log(`⚠️  Could not load checkpoint: ${error.message}`);
+  }
+  return {};
+}
+
+function saveCheckpoint(checkpoint) {
+  try {
+    writeFileSync(CHECKPOINT_FILE, JSON.stringify(checkpoint, null, 2), 'utf-8');
+  } catch (error) {
+    console.error(`❌ Could not save checkpoint: ${error.message}`);
+  }
+}
+
+function getCheckpointKey(folderNumber, fileName) {
+  return `${folderNumber}:${fileName}`;
+}
+
+async function batchProcessPDFs(pdfDir, folderNumber, limit = null, resume = false) {
   const folderPath = join(pdfDir, folderNumber.toString());
   console.log(`\n📁 Batch processing PDFs from folder: ${folderNumber}`);
   console.log(`   Path: ${folderPath}`);
+  
+  // Load checkpoint
+  const checkpoint = loadCheckpoint();
+  const folderKey = `folder_${folderNumber}`;
+  
+  if (!checkpoint[folderKey]) {
+    checkpoint[folderKey] = {
+      completed: [],
+      failed: [],
+      errors: {},
+      lastProcessed: null,
+      totalFiles: 0
+    };
+  }
+  
+  const folderCheckpoint = checkpoint[folderKey];
   
   try {
     const files = readdirSync(folderPath).filter(file => file.endsWith('.pdf'));
     
     console.log(`   Found ${files.length} PDF files in folder ${folderNumber}`);
     
+    // Filter out already completed files if resuming
+    let filesToProcess = files;
+    if (resume && folderCheckpoint.completed.length > 0) {
+      const completedSet = new Set(folderCheckpoint.completed);
+      filesToProcess = files.filter(f => !completedSet.has(f));
+      console.log(`   📋 Resuming: ${folderCheckpoint.completed.length} already completed, ${filesToProcess.length} remaining`);
+    }
+    
+    folderCheckpoint.totalFiles = files.length;
+    
     if (limit) {
       console.log(`   Processing first ${limit} PDFs only\n`);
+      filesToProcess = filesToProcess.slice(0, limit);
     }
     
-    const itemsToProcess = limit ? Math.min(limit, files.length) : files.length;
+    const itemsToProcess = filesToProcess.length;
+    let successCount = folderCheckpoint.completed.length;
+    let failCount = folderCheckpoint.failed.length;
+    
+    console.log(`\n   Starting from item ${successCount + failCount + 1} of ${files.length} total\n`);
     
     for (let i = 0; i < itemsToProcess; i++) {
-      const fileName = files[i];
+      const fileName = filesToProcess[i];
       const formName = fileName.replace('.pdf', ''); // Remove .pdf extension
       const pdfPath = join(folderPath, fileName);
+      const checkpointKey = getCheckpointKey(folderNumber, fileName);
       
-      console.log(`\n[${i + 1}/${itemsToProcess}] Processing: ${formName}`);
+      console.log(`\n[${successCount + failCount + i + 1}/${files.length}] Processing: ${formName}`);
       
-      const success = await createSubForm({
-        pdfPath: pdfPath
-      });
+      let success = false;
+      let errorMessage = null;
       
-      if (success) {
-        console.log(`✅ PDF ${i + 1} completed`);
-      } else {
-        console.log(`❌ PDF ${i + 1} failed`);
+      try {
+        success = await createSubForm({
+          pdfPath: pdfPath
+        });
+        
+        if (success) {
+          console.log(`✅ PDF ${successCount + failCount + i + 1} completed`);
+          folderCheckpoint.completed.push(fileName);
+          // Remove from failed list if it was there before
+          const failedIndex = folderCheckpoint.failed.indexOf(fileName);
+          if (failedIndex > -1) {
+            folderCheckpoint.failed.splice(failedIndex, 1);
+          }
+          delete folderCheckpoint.errors[checkpointKey];
+          successCount++;
+        } else {
+          console.log(`❌ PDF ${successCount + failCount + i + 1} failed`);
+          if (!folderCheckpoint.failed.includes(fileName)) {
+            folderCheckpoint.failed.push(fileName);
+          }
+          folderCheckpoint.errors[checkpointKey] = 'Upload function returned false';
+          failCount++;
+        }
+      } catch (error) {
+        // Continue processing even if individual item fails
+        console.log(`❌ PDF ${successCount + failCount + i + 1} errored: ${error.message}`);
+        if (!folderCheckpoint.failed.includes(fileName)) {
+          folderCheckpoint.failed.push(fileName);
+        }
+        folderCheckpoint.errors[checkpointKey] = error.message;
+        failCount++;
+        success = false;
       }
       
+      // Update checkpoint after each item
+      folderCheckpoint.lastProcessed = fileName;
+      folderCheckpoint.lastProcessedTime = new Date().toISOString();
+      saveCheckpoint(checkpoint);
+      
       // Wait between items
-      console.log('⏳ Waiting 2 seconds before next item...');
-      await page.waitForTimeout(2000);
+      console.log('⏳ Waiting 1 second before next item...');
+      await page.waitForTimeout(1000);
     }
     
-    console.log(`\n🎉 Batch processing folder ${folderNumber} completed!`);
+    const totalCompleted = folderCheckpoint.completed.length;
+    const totalFailed = folderCheckpoint.failed.length;
+    const totalProcessed = totalCompleted + totalFailed;
+    
+    console.log(`\n📊 Batch processing folder ${folderNumber} summary:`);
+    console.log(`   ✅ Completed: ${totalCompleted}/${files.length}`);
+    console.log(`   ❌ Failed: ${totalFailed}/${files.length}`);
+    console.log(`   📈 Progress: ${((totalProcessed / files.length) * 100).toFixed(1)}%`);
+    
+    if (totalFailed > 0) {
+      console.log(`\n   Failed files:`);
+      folderCheckpoint.failed.slice(0, 10).forEach(file => {
+        const key = getCheckpointKey(folderNumber, file);
+        const error = folderCheckpoint.errors[key] || 'Unknown error';
+        console.log(`     - ${file}: ${error}`);
+      });
+      if (folderCheckpoint.failed.length > 10) {
+        console.log(`     ... and ${folderCheckpoint.failed.length - 10} more`);
+      }
+    }
+    
+    if (totalCompleted === files.length) {
+      console.log(`\n🎉 Batch processing folder ${folderNumber} completed!`);
+    } else {
+      console.log(`\n⚠️  Batch processing incomplete. Run again with resume to continue.`);
+    }
     
   } catch (error) {
     console.error(`❌ Error processing folder ${folderNumber}:`, error.message);
+    console.error(`   Stack: ${error.stack}`);
+    // Save checkpoint even on error
+    saveCheckpoint(checkpoint);
   }
+}
+
+function showCheckpointStatus() {
+  const checkpoint = loadCheckpoint();
+  
+  console.log('\n' + '='.repeat(60));
+  console.log('📋 CHECKPOINT STATUS');
+  console.log('='.repeat(60));
+  
+  const folders = ['-', '2', '3', '4', '5', '6', '7', '8'];
+  let hasAnyProgress = false;
+  
+  for (const folder of folders) {
+    const folderKey = `folder_${folder}`;
+    const folderCheckpoint = checkpoint[folderKey];
+    
+    if (folderCheckpoint && (folderCheckpoint.completed.length > 0 || folderCheckpoint.failed.length > 0)) {
+      hasAnyProgress = true;
+      const total = folderCheckpoint.totalFiles || 0;
+      const completed = folderCheckpoint.completed.length;
+      const failed = folderCheckpoint.failed.length;
+      const progress = total > 0 ? ((completed + failed) / total * 100).toFixed(1) : 0;
+      
+      console.log(`\n📁 Folder ${folder}:`);
+      console.log(`   Total files: ${total}`);
+      console.log(`   ✅ Completed: ${completed}`);
+      console.log(`   ❌ Failed: ${failed}`);
+      console.log(`   📈 Progress: ${progress}%`);
+      
+      if (folderCheckpoint.lastProcessed) {
+        console.log(`   🕐 Last processed: ${folderCheckpoint.lastProcessed}`);
+        if (folderCheckpoint.lastProcessedTime) {
+          const date = new Date(folderCheckpoint.lastProcessedTime);
+          console.log(`   🕐 Time: ${date.toLocaleString()}`);
+        }
+      }
+      
+      if (failed > 0 && folderCheckpoint.failed.length <= 5) {
+        console.log(`   Failed files:`);
+        folderCheckpoint.failed.forEach(file => {
+          const key = getCheckpointKey(folder, file);
+          const error = folderCheckpoint.errors[key] || 'Unknown error';
+          console.log(`     - ${file}`);
+          console.log(`       Error: ${error}`);
+        });
+      }
+    }
+  }
+  
+  if (!hasAnyProgress) {
+    console.log('\nℹ️  No checkpoint data found. All folders are fresh.');
+  }
+  
+  console.log('\n' + '='.repeat(60) + '\n');
 }
 
 function waitForEnter() {
@@ -577,8 +754,8 @@ async function showMenu() {
   console.log('🎭 COAST AUTOMATION - LIVE SESSION (PDF UPLOAD)');
   console.log('='.repeat(60));
   console.log('\nPDF Folders:');
-  console.log('  Folder 1: 44 PDFs (starts with -)');
-  console.log('  Folder 2: 365 PDFs (starts with 2)');
+  console.log('  Folder -: 42 PDFs (starts with -)');
+  console.log('  Folder 2: 375 PDFs (starts with 2)');
   console.log('  Folder 3: 148 PDFs (starts with 3)');
   console.log('  Folder 4: 65 PDFs (starts with 4)');
   console.log('  Folder 5: 225 PDFs (starts with 5)');
@@ -589,8 +766,12 @@ async function showMenu() {
   console.log('  c - Upload single test PDF (from folder 2)');
   console.log('  p - Upload single AI-optimized PDF by name (default)');
   console.log('  a - Upload single standard PDF by name');
-  console.log('  1-8 - Batch upload folder (first 5 PDFs)');
-  console.log('  F1-F8 - Batch upload FULL folder (all PDFs!)');
+  console.log('  - - Batch upload folder - (all PDFs)');
+  console.log('  2-8 - Batch upload folder (all PDFs)');
+  console.log('  F then - or 2-8 - Batch upload FULL folder with confirmation');
+  console.log('  R then - or 2-8 - Resume batch upload (skip completed)');
+  console.log('  s - Show checkpoint status');
+  console.log('  x - Clear checkpoint (with confirmation)');
   console.log('  r - Reload Coast app page');
   console.log('  q - Quit\n');
   console.log('Browser window will stay open - NO RE-LOGIN needed!');
@@ -625,8 +806,10 @@ async function handleCommand(key) {
       await uploadSinglePDFByName(pdfStandardDir);  // 'a' now uses standard PDFs
       return false; // Don't show menu immediately - it will be shown after input
     
-    // Batch process folders (first 5)
-    case '1':
+    // Batch process folders (all files)
+    case '-':
+      await batchProcessPDFs(pdfBaseDir, '-', null, false);  // Process all PDFs in folder -
+      break;
     case '2':
     case '3':
     case '4':
@@ -634,19 +817,54 @@ async function handleCommand(key) {
     case '6':
     case '7':
     case '8':
-      await batchProcessPDFs(pdfBaseDir, key, 5);  // Uses AI-optimized PDFs by default
+      await batchProcessPDFs(pdfBaseDir, key, null, false);  // Process all PDFs in folder (no limit)
       break;
     
     // Full folder processing
     case 'F':
       // Next key will be the folder number
-      console.log('\n📁 Enter folder number (1-8):');
+      console.log('\n📁 Enter folder (- or 2-8):');
+      break;
+    
+    // Resume processing
+    case 'R':
+      console.log('\n📁 Enter folder to resume (- or 2-8):');
+      break;
+    
+    // Show checkpoint status
+    case 's':
+      showCheckpointStatus();
+      break;
+    
+    // Clear checkpoint
+    case 'x':
+      console.log('\n⚠️  Are you sure you want to clear all checkpoint data?');
+      console.log('Press Enter to confirm, or any other key to cancel...\n');
+      const confirmClear = await new Promise((resolve) => {
+        process.stdin.once('data', (data) => {
+          resolve(data.toString().trim() === '');
+        });
+      });
+      if (confirmClear) {
+        try {
+          if (existsSync(CHECKPOINT_FILE)) {
+            writeFileSync(CHECKPOINT_FILE, '{}', 'utf-8');
+            console.log('\n✅ Checkpoint cleared!\n');
+          } else {
+            console.log('\nℹ️  No checkpoint file found.\n');
+          }
+        } catch (error) {
+          console.log(`\n❌ Error clearing checkpoint: ${error.message}\n`);
+        }
+      } else {
+        console.log('Cancelled.\n');
+      }
       break;
       
     default:
-      // Check if it's a folder number after 'F'
-      if (key >= '1' && key <= '8' && lastKey === 'F') {
-        const folderCounts = { '1': 44, '2': 365, '3': 148, '4': 65, '5': 225, '6': 19, '7': 175, '8': 14 };
+      // Check if it's a folder number after 'F' (full processing)
+      if ((key === '-' || (key >= '2' && key <= '8')) && lastKey === 'F') {
+        const folderCounts = { '-': 42, '2': 375, '3': 148, '4': 65, '5': 225, '6': 19, '7': 175, '8': 14 };
         console.log(`\n⚠️  This will upload ALL ${folderCounts[key]} PDFs from folder ${key}!`);
         console.log('Press Enter to confirm, or any other key to cancel...\n');
         const confirm = await new Promise((resolve) => {
@@ -655,7 +873,30 @@ async function handleCommand(key) {
           });
         });
         if (confirm) {
-          await batchProcessPDFs(pdfBaseDir, key);
+          await batchProcessPDFs(pdfBaseDir, key, null, false);
+        } else {
+          console.log('Cancelled.');
+        }
+      }
+      // Check if it's a folder number after 'R' (resume processing)
+      else if ((key === '-' || (key >= '2' && key <= '8')) && lastKey === 'R') {
+        const checkpoint = loadCheckpoint();
+        const folderKey = `folder_${key}`;
+        const folderCheckpoint = checkpoint[folderKey] || { completed: [], failed: [] };
+        const totalCompleted = folderCheckpoint.completed.length;
+        const totalFailed = folderCheckpoint.failed.length;
+        
+        console.log(`\n📋 Resuming folder ${key}:`);
+        console.log(`   ✅ Already completed: ${totalCompleted}`);
+        console.log(`   ❌ Previously failed: ${totalFailed}`);
+        console.log(`\nPress Enter to resume, or any other key to cancel...\n`);
+        const confirm = await new Promise((resolve) => {
+          process.stdin.once('data', (data) => {
+            resolve(data.toString().trim() === '');
+          });
+        });
+        if (confirm) {
+          await batchProcessPDFs(pdfBaseDir, key, null, true);
         } else {
           console.log('Cancelled.');
         }
@@ -665,7 +906,7 @@ async function handleCommand(key) {
     case 'r':
       console.log('\n🔄 Reloading page...');
       await page.reload();
-      await page.waitForTimeout(2000);
+      await page.waitForTimeout(1000);
       console.log('✅ Page reloaded\n');
       break;
       

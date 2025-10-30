@@ -14,22 +14,30 @@ STEP 1: INSTALL NODE.JS (Do this once)
 
 ═══════════════════════════════════════════════════════════════
 
-STEP 2: SETUP (Do this once - Just double-click!)
-   └─→ Double-click:  Setup.command
+STEP 2: SETUP (Do this once)
+   └─→ RIGHT-CLICK:  Setup.command
+   └─→ Select "Open"
+   └─→ If you see "Apple cannot verify", click "Open" again
    └─→ Wait 2-5 minutes
    └─→ Done! ✅
 
 ═══════════════════════════════════════════════════════════════
 
 STEP 3: RUN THE PROGRAM (Every time you want to use it)
-   └─→ Double-click:  Run.command
+   └─→ RIGHT-CLICK:  Run.command
+   └─→ Select "Open"
+   └─→ If you see "Apple cannot verify", click "Open" again
    └─→ Follow the menu on screen
 
 ═══════════════════════════════════════════════════════════════
 
-That's it! No Terminal, no commands, just double-click!
+IMPORTANT: If you see "Apple cannot verify this app"
+   └─→ Right-click the file (don't double-click)
+   └─→ Select "Open"
+   └─→ Click "Open" when macOS asks again
+   └─→ This is normal - macOS is protecting you!
 
-If double-clicking doesn't work, see QUICK_START.md for help.
+If right-clicking doesn't work, see QUICK_START.md for help.
 
 ═══════════════════════════════════════════════════════════════
 

@@ -10,14 +10,16 @@
 3. Install it
 4. **Restart your computer**
 
-**STEP 2: Setup** (One Time - Just Double-Click!)
+**STEP 2: Setup** (One Time)
 - Find `Setup.command` in the folder
-- **Double-click it**
+- **RIGHT-CLICK it and select "Open"** (or Control+Click)
+- If you see "Apple cannot verify this app", click **"Open"** again
 - Wait 2-5 minutes
 - Done! ✅
 
-**STEP 3: Run the Program** (Every Time - Just Double-Click!)
-- **Double-click `Run.command`**
+**STEP 3: Run the Program** (Every Time)
+- **RIGHT-CLICK `Run.command` and select "Open"**
+- If you see "Apple cannot verify this app", click **"Open"** again
 - Follow the on-screen menu
 
 ---
@@ -62,6 +64,11 @@ npm run live
 Once running, follow the on-screen instructions to upload PDFs to Coast app.
 
 ## Troubleshooting
+
+**"Apple cannot verify this app" / Gatekeeper Warning**
+- This is normal! macOS blocks unsigned scripts for security
+- **Solution:** Right-click the file → Select "Open" → Click "Open" again
+- After the first time, you can double-click normally
 
 **"node: command not found"**
 - Node.js isn't installed or you need to restart your computer

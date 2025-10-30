@@ -26,9 +26,9 @@ def get_folder_name(filename):
     # Remove .json extension
     name = filename.replace('.json', '')
     
-    # Files starting with hyphen go in folder "1"
+    # Files starting with hyphen go in folder "-"
     if name.startswith('-'):
-        return '1'
+        return '-'
     
     # Files starting with a number like "2.x" go in folder "2"
     if name[0].isdigit():
