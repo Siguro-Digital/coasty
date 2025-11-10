@@ -2,6 +2,7 @@ import { chromium } from 'playwright';
 import { readFileSync, readdirSync, existsSync, writeFileSync } from 'fs';
 import { join, basename, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -567,15 +568,38 @@ async function batchProcessPDFs(pdfDir, folderNumber, limit = null, resume = fal
   
   const folderCheckpoint = checkpoint[folderKey];
   
+  // Clean up any duplicates in checkpoint arrays
+  if (folderCheckpoint.completed) {
+    folderCheckpoint.completed = [...new Set(folderCheckpoint.completed)];
+  }
+  if (folderCheckpoint.failed) {
+    folderCheckpoint.failed = [...new Set(folderCheckpoint.failed)];
+  }
+  
   try {
-    const files = readdirSync(folderPath).filter(file => file.endsWith('.pdf'));
+    // Use find -print0 to handle filenames with newlines and special characters
+    // Use shell: false and pass args as array to avoid shell interpretation issues
+    const findOutput = execSync('find', [
+      folderPath,
+      '-maxdepth', '1',
+      '-name', '*.pdf',
+      '-type', 'f',
+      '-print0'
+    ], { encoding: 'utf8', maxBuffer: 10 * 1024 * 1024 });
+    const files = findOutput
+      .split('\0')
+      .filter(path => path && path.trim())
+      .map(fullPath => basename(fullPath))
+      .filter(file => file.endsWith('.pdf'));
     
     console.log(`   Found ${files.length} PDF files in folder ${folderNumber}`);
     
     // Filter out already completed files if resuming
     let filesToProcess = files;
     if (resume && folderCheckpoint.completed.length > 0) {
-      const completedSet = new Set(folderCheckpoint.completed);
+      // Normalize checkpoint filenames (convert literal \n to actual newline for comparison)
+      const normalizedCompleted = folderCheckpoint.completed.map(f => f.replace(/\\n/g, '\n'));
+      const completedSet = new Set(normalizedCompleted);
       filesToProcess = files.filter(f => !completedSet.has(f));
       console.log(`   📋 Resuming: ${folderCheckpoint.completed.length} already completed, ${filesToProcess.length} remaining`);
     }
@@ -588,8 +612,9 @@ async function batchProcessPDFs(pdfDir, folderNumber, limit = null, resume = fal
     }
     
     const itemsToProcess = filesToProcess.length;
-    let successCount = folderCheckpoint.completed.length;
-    let failCount = folderCheckpoint.failed.length;
+    // Use deduplicated counts to handle any duplicates in checkpoint
+    let successCount = new Set(folderCheckpoint.completed).size;
+    let failCount = new Set(folderCheckpoint.failed).size;
     
     console.log(`\n   Starting from item ${successCount + failCount + 1} of ${files.length} total\n`);
     
@@ -599,7 +624,19 @@ async function batchProcessPDFs(pdfDir, folderNumber, limit = null, resume = fal
       const pdfPath = join(folderPath, fileName);
       const checkpointKey = getCheckpointKey(folderNumber, fileName);
       
-      console.log(`\n[${successCount + failCount + i + 1}/${files.length}] Processing: ${formName}`);
+      // Defensive check: skip if already completed (normalize for comparison)
+      const normalizedCompleted = folderCheckpoint.completed.map(f => f.replace(/\\n/g, '\n'));
+      if (normalizedCompleted.includes(fileName)) {
+        console.log(`\n⏭️  Skipping ${formName} (already completed)`);
+        continue;
+      }
+      
+      // Calculate current progress using deduplicated counts
+      const currentCompleted = new Set(folderCheckpoint.completed).size;
+      const currentFailed = new Set(folderCheckpoint.failed).size;
+      const currentTotal = currentCompleted + currentFailed;
+      
+      console.log(`\n[${currentTotal + 1}/${files.length}] Processing: ${formName}`);
       
       let success = false;
       let errorMessage = null;
@@ -610,31 +647,35 @@ async function batchProcessPDFs(pdfDir, folderNumber, limit = null, resume = fal
         });
         
         if (success) {
-          console.log(`✅ PDF ${successCount + failCount + i + 1} completed`);
-          folderCheckpoint.completed.push(fileName);
+          // Only add if not already in completed list (prevent duplicates)
+          if (!folderCheckpoint.completed.includes(fileName)) {
+            folderCheckpoint.completed.push(fileName);
+            successCount++;
+          }
           // Remove from failed list if it was there before
           const failedIndex = folderCheckpoint.failed.indexOf(fileName);
           if (failedIndex > -1) {
             folderCheckpoint.failed.splice(failedIndex, 1);
+            failCount--;
           }
           delete folderCheckpoint.errors[checkpointKey];
-          successCount++;
+          console.log(`✅ PDF ${currentTotal + 1} completed`);
         } else {
-          console.log(`❌ PDF ${successCount + failCount + i + 1} failed`);
+          console.log(`❌ PDF ${currentTotal + 1} failed`);
           if (!folderCheckpoint.failed.includes(fileName)) {
             folderCheckpoint.failed.push(fileName);
+            failCount++;
           }
           folderCheckpoint.errors[checkpointKey] = 'Upload function returned false';
-          failCount++;
         }
       } catch (error) {
         // Continue processing even if individual item fails
-        console.log(`❌ PDF ${successCount + failCount + i + 1} errored: ${error.message}`);
+        console.log(`❌ PDF ${currentTotal + 1} errored: ${error.message}`);
         if (!folderCheckpoint.failed.includes(fileName)) {
           folderCheckpoint.failed.push(fileName);
+          failCount++;
         }
         folderCheckpoint.errors[checkpointKey] = error.message;
-        failCount++;
         success = false;
       }
       
@@ -648,8 +689,9 @@ async function batchProcessPDFs(pdfDir, folderNumber, limit = null, resume = fal
       await page.waitForTimeout(1000);
     }
     
-    const totalCompleted = folderCheckpoint.completed.length;
-    const totalFailed = folderCheckpoint.failed.length;
+    // Use deduplicated counts for accurate reporting
+    const totalCompleted = new Set(folderCheckpoint.completed).size;
+    const totalFailed = new Set(folderCheckpoint.failed).size;
     const totalProcessed = totalCompleted + totalFailed;
     
     console.log(`\n📊 Batch processing folder ${folderNumber} summary:`);
@@ -659,13 +701,15 @@ async function batchProcessPDFs(pdfDir, folderNumber, limit = null, resume = fal
     
     if (totalFailed > 0) {
       console.log(`\n   Failed files:`);
-      folderCheckpoint.failed.slice(0, 10).forEach(file => {
+      // Get unique failed files
+      const uniqueFailed = [...new Set(folderCheckpoint.failed)];
+      uniqueFailed.slice(0, 10).forEach(file => {
         const key = getCheckpointKey(folderNumber, file);
         const error = folderCheckpoint.errors[key] || 'Unknown error';
         console.log(`     - ${file}: ${error}`);
       });
-      if (folderCheckpoint.failed.length > 10) {
-        console.log(`     ... and ${folderCheckpoint.failed.length - 10} more`);
+      if (uniqueFailed.length > 10) {
+        console.log(`     ... and ${uniqueFailed.length - 10} more`);
       }
     }
     
@@ -681,6 +725,353 @@ async function batchProcessPDFs(pdfDir, folderNumber, limit = null, resume = fal
     // Save checkpoint even on error
     saveCheckpoint(checkpoint);
   }
+}
+
+async function verifyFormExistsOnSite(formName) {
+  try {
+    // Navigate to sub forms page if not already there
+    if (!isOnSubFormsPage) {
+      await navigateToSubForms();
+    }
+    
+    // Wait for page to be ready
+    await page.waitForTimeout(1000);
+    
+    // First, clear any existing search by finding and clearing the search input
+    // Look for search input that's specifically on the Sub Forms page
+    // Based on the HTML structure, it should be in a container with the form list
+    const searchSelectors = [
+      'input[type="text"][placeholder*="Search"]',
+      'input[type="text"]',
+    ];
+    
+    let searchInput = null;
+    for (const selector of searchSelectors) {
+      try {
+        // Try to find search input that's visible and in the main content area
+        const inputs = page.locator(selector);
+        const count = await inputs.count();
+        for (let i = 0; i < count; i++) {
+          const input = inputs.nth(i);
+          const isVisible = await input.isVisible();
+          if (isVisible) {
+            searchInput = input;
+            break;
+          }
+        }
+        if (searchInput) break;
+      } catch (e) {
+        // Try next selector
+      }
+    }
+    
+    if (!searchInput) {
+      console.log('   ⚠️  Could not find search bar, assuming form does not exist');
+      return false;
+    }
+    
+    // Clear any existing search first
+    await searchInput.click();
+    await searchInput.clear();
+    await page.waitForTimeout(500);
+    
+    // Check initial state - if "No Sub Forms" is visible with empty search, we're on the right page
+    const initialNoForms = page.locator(':has-text("No Sub Forms")');
+    const hasInitialNoForms = await initialNoForms.isVisible().catch(() => false);
+    
+    // Enter form name in search
+    await searchInput.fill(formName);
+    await page.waitForTimeout(2000); // Wait longer for search to filter results
+    
+    // Check if "No Sub Forms" message appears (means form doesn't exist)
+    const noFormsSelectors = [
+      ':has-text("No Sub Forms")',
+      ':has-text("Add new Sub Forms")'
+    ];
+    
+    let noFormsVisible = false;
+    for (const selector of noFormsSelectors) {
+      try {
+        const noFormsElement = page.locator(selector).first();
+        noFormsVisible = await noFormsElement.isVisible({ timeout: 500 });
+        if (noFormsVisible) break;
+      } catch (e) {
+        // Element not found, continue checking
+      }
+    }
+    
+    // If we see "No Sub Forms" after searching, the form doesn't exist
+    if (noFormsVisible) {
+      await searchInput.clear(); // Clear search
+      await page.waitForTimeout(500);
+      return false;
+    }
+    
+    // Check if the form name actually appears in the visible results
+    // Look for the form name in visible text elements (not just page content)
+    const formNameEscaped = formName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const formNameRegex = new RegExp(formNameEscaped, 'i');
+    
+    // Check if form name appears in visible text
+    const visibleText = await page.evaluate(() => {
+      const walker = document.createTreeWalker(
+        document.body,
+        NodeFilter.SHOW_TEXT,
+        null,
+        false
+      );
+      const texts = [];
+      let node;
+      while (node = walker.nextNode()) {
+        if (node.parentElement && window.getComputedStyle(node.parentElement).display !== 'none') {
+          texts.push(node.textContent.trim());
+        }
+      }
+      return texts.join(' ');
+    });
+    
+    const formExists = formNameRegex.test(visibleText);
+    
+    // Clear search before returning
+    await searchInput.clear();
+    await page.waitForTimeout(500);
+    
+    return formExists;
+  } catch (error) {
+    console.log(`   ⚠️  Error verifying form: ${error.message}`);
+    return false; // If verification fails, assume it doesn't exist and should be uploaded
+  }
+}
+
+async function uploadMissingForms(pdfDir) {
+  const MISSING_UPLOADS_FILE = join(__dirname, '..', 'missing_uploads_list.json');
+  
+  if (!existsSync(MISSING_UPLOADS_FILE)) {
+    console.log('\n❌ missing_uploads_list.json not found!');
+    console.log('   Please run: node find_missing_uploads.js\n');
+    return;
+  }
+  
+  const missingData = JSON.parse(readFileSync(MISSING_UPLOADS_FILE, 'utf8'));
+  const missingFiles = missingData.found || [];
+  
+  if (missingFiles.length === 0) {
+    console.log('\n✅ No missing files to upload!\n');
+    return;
+  }
+  
+  console.log('\n' + '='.repeat(60));
+  console.log('📤 UPLOADING MISSING FORMS');
+  console.log('='.repeat(60));
+  console.log(`\n📊 Found ${missingFiles.length} missing forms to upload`);
+  
+  // Group by folder for display
+  const byFolder = {};
+  missingFiles.forEach(item => {
+    if (!byFolder[item.folder]) {
+      byFolder[item.folder] = [];
+    }
+    byFolder[item.folder].push(item);
+  });
+  
+  console.log('\n📁 Files by folder:');
+  Object.keys(byFolder).sort().forEach(folder => {
+    console.log(`   Folder ${folder}: ${byFolder[folder].length} files`);
+  });
+  
+  console.log('\n⚠️  This will upload all missing forms from the comparison list.');
+  console.log('Press Enter to continue, or any other key to cancel...\n');
+  
+  const confirm = await new Promise((resolve) => {
+    process.stdin.once('data', (data) => {
+      resolve(data.toString().trim() === '');
+    });
+  });
+  
+  if (!confirm) {
+    console.log('Cancelled.\n');
+    return;
+  }
+  
+  const checkpoint = loadCheckpoint();
+  let successCount = 0;
+  let failCount = 0;
+  
+  // Process files grouped by folder
+  for (const folder of Object.keys(byFolder).sort()) {
+    const folderFiles = byFolder[folder];
+    const folderKey = `folder_${folder}`;
+    const folderCheckpoint = checkpoint[folderKey] || { completed: [], failed: [] };
+    
+    console.log(`\n${'='.repeat(60)}`);
+    console.log(`📁 Processing folder ${folder} (${folderFiles.length} files)`);
+    console.log('='.repeat(60));
+    
+    for (let i = 0; i < folderFiles.length; i++) {
+      const item = folderFiles[i];
+      const fileName = item.fileName;
+      const pdfPath = item.fullPath;
+      
+      console.log(`\n📄 [${i + 1}/${folderFiles.length}] Uploading: ${fileName}`);
+      
+      try {
+        await createSubForm({ pdfPath });
+        
+        // Mark as completed
+        if (!folderCheckpoint.completed.includes(fileName)) {
+          folderCheckpoint.completed.push(fileName);
+          successCount++;
+        }
+        
+        // Remove from failed if it was there
+        const failedIndex = folderCheckpoint.failed.indexOf(fileName);
+        if (failedIndex !== -1) {
+          folderCheckpoint.failed.splice(failedIndex, 1);
+          delete folderCheckpoint.errors[getCheckpointKey(folder, fileName)];
+        }
+        
+        saveCheckpoint(checkpoint);
+        
+        // Small delay between uploads
+        await page.waitForTimeout(1000);
+        
+      } catch (error) {
+        console.error(`\n❌ Error uploading ${fileName}:`, error.message);
+        
+        // Mark as failed
+        if (!folderCheckpoint.failed.includes(fileName)) {
+          folderCheckpoint.failed.push(fileName);
+          failCount++;
+        }
+        folderCheckpoint.errors[getCheckpointKey(folder, fileName)] = error.message;
+        
+        saveCheckpoint(checkpoint);
+      }
+    }
+  }
+  
+  console.log(`\n${'='.repeat(60)}`);
+  console.log('📊 UPLOAD SUMMARY');
+  console.log('='.repeat(60));
+  console.log(`✅ Successfully uploaded: ${successCount}`);
+  console.log(`❌ Failed: ${failCount}`);
+  console.log(`📈 Total processed: ${successCount + failCount}/${missingFiles.length}`);
+  console.log('='.repeat(60) + '\n');
+}
+
+async function processAllRemaining(pdfDir) {
+  const folders = ['-', '2', '3', '4', '5', '6', '7', '8'];
+  const checkpoint = loadCheckpoint();
+  
+  console.log('\n' + '='.repeat(60));
+  console.log('🚀 PROCESSING ALL REMAINING FILES ACROSS ALL FOLDERS');
+  console.log('='.repeat(60));
+  
+  // First, show summary of what will be processed
+  let totalRemaining = 0;
+  const folderSummary = [];
+  
+  for (const folder of folders) {
+    const folderPath = join(pdfDir, folder.toString());
+    if (!existsSync(folderPath)) continue;
+    
+    // Use find -print0 to handle filenames with newlines and special characters
+    // Use shell: false and pass args as array to avoid shell interpretation issues
+    const findOutput = execSync('find', [
+      folderPath,
+      '-maxdepth', '1',
+      '-name', '*.pdf',
+      '-type', 'f',
+      '-print0'
+    ], { encoding: 'utf8', maxBuffer: 10 * 1024 * 1024 });
+    const files = findOutput
+      .split('\0')
+      .filter(path => path && path.trim())
+      .map(fullPath => basename(fullPath))
+      .filter(file => file.endsWith('.pdf'));
+    
+    const folderKey = `folder_${folder}`;
+    const folderCheckpoint = checkpoint[folderKey] || { completed: [], failed: [] };
+    // Normalize checkpoint filenames (convert literal \n to actual newline for comparison)
+    const normalizedCompleted = folderCheckpoint.completed.map(f => f.replace(/\\n/g, '\n'));
+    const completedSet = new Set(normalizedCompleted);
+    const remaining = files.filter(f => !completedSet.has(f));
+    
+    if (remaining.length > 0) {
+      totalRemaining += remaining.length;
+      folderSummary.push({
+        folder,
+        remaining: remaining.length,
+        failed: (folderCheckpoint.failed || []).length
+      });
+    }
+  }
+  
+  if (totalRemaining === 0) {
+    console.log('\n✅ All files have been processed! Nothing to do.\n');
+    return;
+  }
+  
+  console.log(`\n📊 Summary:`);
+  console.log(`   Total remaining files: ${totalRemaining}`);
+  folderSummary.forEach(({ folder, remaining, failed }) => {
+    console.log(`   Folder ${folder}: ${remaining} remaining${failed > 0 ? ` (${failed} failed)` : ''}`);
+  });
+  
+  console.log('\n⚠️  This will process all remaining files across all folders.');
+  console.log('Press Enter to continue, or any other key to cancel...\n');
+  
+  const confirm = await new Promise((resolve) => {
+    process.stdin.once('data', (data) => {
+      resolve(data.toString().trim() === '');
+    });
+  });
+  
+  if (!confirm) {
+    console.log('Cancelled.\n');
+    return;
+  }
+  
+  // Process each folder
+  for (const folder of folders) {
+    const folderPath = join(pdfDir, folder.toString());
+    if (!existsSync(folderPath)) continue;
+    
+    // Use find -print0 to handle filenames with newlines and special characters
+    // Use shell: false and pass args as array to avoid shell interpretation issues
+    const findOutput = execSync('find', [
+      folderPath,
+      '-maxdepth', '1',
+      '-name', '*.pdf',
+      '-type', 'f',
+      '-print0'
+    ], { encoding: 'utf8', maxBuffer: 10 * 1024 * 1024 });
+    const files = findOutput
+      .split('\0')
+      .filter(path => path && path.trim())
+      .map(fullPath => basename(fullPath))
+      .filter(file => file.endsWith('.pdf'));
+    
+    const folderKey = `folder_${folder}`;
+    const folderCheckpoint = checkpoint[folderKey] || { completed: [], failed: [] };
+    // Normalize checkpoint filenames (convert literal \n to actual newline for comparison)
+    const normalizedCompleted = folderCheckpoint.completed.map(f => f.replace(/\\n/g, '\n'));
+    const completedSet = new Set(normalizedCompleted);
+    const remaining = files.filter(f => !completedSet.has(f));
+    
+    if (remaining.length > 0) {
+      console.log(`\n${'='.repeat(60)}`);
+      console.log(`📁 Processing folder ${folder}: ${remaining.length} files remaining`);
+      console.log('='.repeat(60));
+      await batchProcessPDFs(pdfDir, folder, null, true); // Use resume mode
+    } else {
+      console.log(`\n⏭️  Folder ${folder}: All files completed, skipping...`);
+    }
+  }
+  
+  console.log('\n' + '='.repeat(60));
+  console.log('✅ Finished processing all remaining files!');
+  console.log('='.repeat(60) + '\n');
 }
 
 function showCheckpointStatus() {
@@ -750,9 +1141,61 @@ function setupReadline() {
 }
 
 async function showMenu() {
+  // Load comparison stats if available
+  let siteTotal = 0;
+  let localTotal = 0;
+  let missingCount = 0;
+  
+  try {
+    const comparisonFile = join(__dirname, '..', 'forms_comparison.json');
+    if (existsSync(comparisonFile)) {
+      const comparisonData = JSON.parse(readFileSync(comparisonFile, 'utf8'));
+      siteTotal = comparisonData.metadata?.siteFormsTotal || 0;
+      localTotal = comparisonData.metadata?.localFormsTotal || 0;
+      missingCount = comparisonData.metadata?.extraLocallyCount || 0;
+    }
+  } catch (error) {
+    // Ignore errors, just use defaults
+  }
+  
   console.log('\n' + '='.repeat(60));
   console.log('🎭 COAST AUTOMATION - LIVE SESSION (PDF UPLOAD)');
   console.log('='.repeat(60));
+  
+  if (siteTotal > 0 || localTotal > 0) {
+    const comparisonFile = join(__dirname, '..', 'forms_comparison.json');
+    let missingLocallyCount = 0;
+    let truncatedCount = 0;
+    try {
+      if (existsSync(comparisonFile)) {
+        const comparisonData = JSON.parse(readFileSync(comparisonFile, 'utf8'));
+        missingLocallyCount = comparisonData.metadata?.missingLocallyCount || 0;
+        truncatedCount = comparisonData.metadata?.truncatedMatchesCount || 0;
+      }
+    } catch (error) {
+      // Ignore errors
+    }
+    
+    console.log('\n📊 STATISTICS:');
+    console.log(`   Live site forms: ${siteTotal}`);
+    console.log(`   Local PDF files: ${localTotal}`);
+    const difference = localTotal - siteTotal;
+    if (difference > 0) {
+      console.log(`   📤 Need uploading: ${missingCount} forms (exist locally, not on site)`);
+      if (missingLocallyCount > 0) {
+        console.log(`   📥 Missing locally: ${missingLocallyCount} forms (exist on site, not local)`);
+      }
+      if (truncatedCount > 0) {
+        console.log(`   ℹ️  Truncated matches: ${truncatedCount} (site forms with shortened names)`);
+      }
+      console.log(`   📊 Net difference: +${difference} (local has ${difference} more than site)`);
+    } else if (difference < 0) {
+      console.log(`   Difference: ${difference} (site has more)`);
+    } else {
+      console.log(`   ✅ Perfect match!`);
+    }
+  }
+  
   console.log('\nPDF Folders:');
   console.log('  Folder -: 42 PDFs (starts with -)');
   console.log('  Folder 2: 375 PDFs (starts with 2)');
@@ -770,6 +1213,8 @@ async function showMenu() {
   console.log('  2-8 - Batch upload folder (all PDFs)');
   console.log('  F then - or 2-8 - Batch upload FULL folder with confirmation');
   console.log('  R then - or 2-8 - Resume batch upload (skip completed)');
+  console.log('  A - Process ALL remaining files across ALL folders');
+  console.log(`  M - Upload ${missingCount > 0 ? missingCount : 'missing'} missing forms (from comparison)`);
   console.log('  s - Show checkpoint status');
   console.log('  x - Clear checkpoint (with confirmation)');
   console.log('  r - Reload Coast app page');
@@ -829,6 +1274,16 @@ async function handleCommand(key) {
     // Resume processing
     case 'R':
       console.log('\n📁 Enter folder to resume (- or 2-8):');
+      break;
+    
+    // Process all remaining files across all folders
+    case 'A':
+      await processAllRemaining(pdfBaseDir);
+      break;
+    
+    // Upload missing forms from comparison
+    case 'M':
+      await uploadMissingForms(pdfBaseDir);
       break;
     
     // Show checkpoint status

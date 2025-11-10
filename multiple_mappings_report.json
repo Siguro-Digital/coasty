@@ -1,0 +1,338 @@
+{
+  "metadata": {
+    "analyzedAt": "2025-11-07T19:54:55.441Z",
+    "liveFormsCount": 1062,
+    "localFilesCount": 1063,
+    "multipleMappingsCount": 16,
+    "totalAffectedLocalFiles": 33
+  },
+  "multipleMappings": [
+    {
+      "liveForm": "7.11-CONC ENC STL",
+      "liveFormLength": 17,
+      "localFiles": [
+        {
+          "folder": "7",
+          "fileName": "7.11-CONC ENC STL FRAME AND RC LINING -Bi-Annual.pdf",
+          "formName": "7.11-CONC ENC STL FRAME AND RC LINING -Bi-Annual",
+          "formNameLength": 48,
+          "difference": 31
+        },
+        {
+          "folder": "7",
+          "fileName": "7.11-CONC ENC STL FRAMES -Bi-Annual.pdf",
+          "formName": "7.11-CONC ENC STL FRAMES -Bi-Annual",
+          "formNameLength": 35,
+          "difference": 18
+        },
+        {
+          "folder": "7",
+          "fileName": "7.11-CONC ENC STL FRAME AND RC INVERT -Bi-Annual.pdf",
+          "formName": "7.11-CONC ENC STL FRAME AND RC INVERT -Bi-Annual",
+          "formNameLength": 48,
+          "difference": 31
+        }
+      ]
+    },
+    {
+      "liveForm": "2.16-DDC-Annual",
+      "liveFormLength": 15,
+      "localFiles": [
+        {
+          "folder": "2",
+          "fileName": "2.16-DDC-Annual-TORFI.pdf",
+          "formName": "2.16-DDC-Annual-TORFI",
+          "formNameLength": 21,
+          "difference": 6
+        },
+        {
+          "folder": "2",
+          "fileName": "2.16-DDC-Annual.pdf",
+          "formName": "2.16-DDC-Annual",
+          "formNameLength": 15,
+          "difference": 0
+        }
+      ]
+    },
+    {
+      "liveForm": "2.16-SPF-Semi-Annual",
+      "liveFormLength": 20,
+      "localFiles": [
+        {
+          "folder": "2",
+          "fileName": "2.16-SPF-Semi-Annual-TORFI-TORFI.pdf",
+          "formName": "2.16-SPF-Semi-Annual-TORFI-TORFI",
+          "formNameLength": 32,
+          "difference": 12
+        },
+        {
+          "folder": "2",
+          "fileName": "2.16-SPF-Semi-Annual.pdf",
+          "formName": "2.16-SPF-Semi-Annual",
+          "formNameLength": 20,
+          "difference": 0
+        }
+      ]
+    },
+    {
+      "liveForm": "2.16-SPP-Annual",
+      "liveFormLength": 15,
+      "localFiles": [
+        {
+          "folder": "2",
+          "fileName": "2.16-SPP-Annual-TORFI.pdf",
+          "formName": "2.16-SPP-Annual-TORFI",
+          "formNameLength": 21,
+          "difference": 6
+        },
+        {
+          "folder": "2",
+          "fileName": "2.16-SPP-Annual.pdf",
+          "formName": "2.16-SPP-Annual",
+          "formNameLength": 15,
+          "difference": 0
+        }
+      ]
+    },
+    {
+      "liveForm": "2.16-SPP-Semi-Annual",
+      "liveFormLength": 20,
+      "localFiles": [
+        {
+          "folder": "2",
+          "fileName": "2.16-SPP-Semi-Annual.pdf",
+          "formName": "2.16-SPP-Semi-Annual",
+          "formNameLength": 20,
+          "difference": 0
+        },
+        {
+          "folder": "2",
+          "fileName": "2.16-SPP-Semi-Annual-TORFI.pdf",
+          "formName": "2.16-SPP-Semi-Annual-TORFI",
+          "formNameLength": 26,
+          "difference": 6
+        }
+      ]
+    },
+    {
+      "liveForm": "2.16-TEC-Annual",
+      "liveFormLength": 15,
+      "localFiles": [
+        {
+          "folder": "2",
+          "fileName": "2.16-TEC-Annual.pdf",
+          "formName": "2.16-TEC-Annual",
+          "formNameLength": 15,
+          "difference": 0
+        },
+        {
+          "folder": "2",
+          "fileName": "2.16-TEC-Annual-TORFI.pdf",
+          "formName": "2.16-TEC-Annual-TORFI",
+          "formNameLength": 21,
+          "difference": 6
+        }
+      ]
+    },
+    {
+      "liveForm": "2.7-SPF-Semi-Annual",
+      "liveFormLength": 19,
+      "localFiles": [
+        {
+          "folder": "2",
+          "fileName": "2.7-SPF-Semi-Annual-TORFI.pdf",
+          "formName": "2.7-SPF-Semi-Annual-TORFI",
+          "formNameLength": 25,
+          "difference": 6
+        },
+        {
+          "folder": "2",
+          "fileName": "2.7-SPF-Semi-Annual.pdf",
+          "formName": "2.7-SPF-Semi-Annual",
+          "formNameLength": 19,
+          "difference": 0
+        }
+      ]
+    },
+    {
+      "liveForm": "2.7-TEF(D)-Annual",
+      "liveFormLength": 17,
+      "localFiles": [
+        {
+          "folder": "2",
+          "fileName": "2.7-TEF(D)-Annual-TORFI.pdf",
+          "formName": "2.7-TEF(D)-Annual-TORFI",
+          "formNameLength": 23,
+          "difference": 6
+        },
+        {
+          "folder": "2",
+          "fileName": "2.7-TEF(D)-Annual.pdf",
+          "formName": "2.7-TEF(D)-Annual",
+          "formNameLength": 17,
+          "difference": 0
+        }
+      ]
+    },
+    {
+      "liveForm": "2.8-ATC-Annual",
+      "liveFormLength": 14,
+      "localFiles": [
+        {
+          "folder": "2",
+          "fileName": "2.8-ATC-Annual-TORFI.pdf",
+          "formName": "2.8-ATC-Annual-TORFI",
+          "formNameLength": 20,
+          "difference": 6
+        },
+        {
+          "folder": "2",
+          "fileName": "2.8-ATC-Annual.pdf",
+          "formName": "2.8-ATC-Annual",
+          "formNameLength": 14,
+          "difference": 0
+        }
+      ]
+    },
+    {
+      "liveForm": "2.8-ATC-Semi-Annual",
+      "liveFormLength": 19,
+      "localFiles": [
+        {
+          "folder": "2",
+          "fileName": "2.8-ATC-Semi-Annual-TORFI.pdf",
+          "formName": "2.8-ATC-Semi-Annual-TORFI",
+          "formNameLength": 25,
+          "difference": 6
+        },
+        {
+          "folder": "2",
+          "fileName": "2.8-ATC-Semi-Annual.pdf",
+          "formName": "2.8-ATC-Semi-Annual",
+          "formNameLength": 19,
+          "difference": 0
+        }
+      ]
+    },
+    {
+      "liveForm": "4.10-TVCS FIELD SERVER",
+      "liveFormLength": 22,
+      "localFiles": [
+        {
+          "folder": "4",
+          "fileName": "4.10-TVCS FIELD SERVER SOFTWARE-Annual.pdf",
+          "formName": "4.10-TVCS FIELD SERVER SOFTWARE-Annual",
+          "formNameLength": 38,
+          "difference": 16
+        },
+        {
+          "folder": "4",
+          "fileName": "4.10-TVCS FIELD SERVER-Semi-Annual.pdf",
+          "formName": "4.10-TVCS FIELD SERVER-Semi-Annual",
+          "formNameLength": 34,
+          "difference": 12
+        }
+      ]
+    },
+    {
+      "liveForm": "4.6-BMS-FLSS APP",
+      "liveFormLength": 16,
+      "localFiles": [
+        {
+          "folder": "4",
+          "fileName": "4.6-BMS-FLSS APP SERVER-Annual.pdf",
+          "formName": "4.6-BMS-FLSS APP SERVER-Annual",
+          "formNameLength": 30,
+          "difference": 14
+        },
+        {
+          "folder": "4",
+          "fileName": "4.6-BMS-FLSS APP SOFTWARE-Annual.pdf",
+          "formName": "4.6-BMS-FLSS APP SOFTWARE-Annual",
+          "formNameLength": 32,
+          "difference": 16
+        }
+      ]
+    },
+    {
+      "liveForm": "4.6-BMS-FLSS CL",
+      "liveFormLength": 15,
+      "localFiles": [
+        {
+          "folder": "4",
+          "fileName": "4.6-BMS-FLSS CL WORKSTATION -Annual.pdf",
+          "formName": "4.6-BMS-FLSS CL WORKSTATION -Annual",
+          "formNameLength": 35,
+          "difference": 20
+        },
+        {
+          "folder": "4",
+          "fileName": "4.6-BMS-FLSS CL SOFTWARE-Annual.pdf",
+          "formName": "4.6-BMS-FLSS CL SOFTWARE-Annual",
+          "formNameLength": 31,
+          "difference": 16
+        }
+      ]
+    },
+    {
+      "liveForm": "4.6-BMS-FLSS DB",
+      "liveFormLength": 15,
+      "localFiles": [
+        {
+          "folder": "4",
+          "fileName": "4.6-BMS-FLSS DB SOFTWARE-Annual.pdf",
+          "formName": "4.6-BMS-FLSS DB SOFTWARE-Annual",
+          "formNameLength": 31,
+          "difference": 16
+        },
+        {
+          "folder": "4",
+          "fileName": "4.6-BMS-FLSS DB SERVER-Annual.pdf",
+          "formName": "4.6-BMS-FLSS DB SERVER-Annual",
+          "formNameLength": 29,
+          "difference": 14
+        }
+      ]
+    },
+    {
+      "liveForm": "4.6-BMS-FLSS PB",
+      "liveFormLength": 15,
+      "localFiles": [
+        {
+          "folder": "4",
+          "fileName": "4.6-BMS-FLSS PB SOFTWARE-Annual.pdf",
+          "formName": "4.6-BMS-FLSS PB SOFTWARE-Annual",
+          "formNameLength": 31,
+          "difference": 16
+        },
+        {
+          "folder": "4",
+          "fileName": "4.6-BMS-FLSS PB SERVER-Annual.pdf",
+          "formName": "4.6-BMS-FLSS PB SERVER-Annual",
+          "formNameLength": 29,
+          "difference": 14
+        }
+      ]
+    },
+    {
+      "liveForm": "7.11-CIP W SHOTCRETE",
+      "liveFormLength": 20,
+      "localFiles": [
+        {
+          "folder": "7",
+          "fileName": "7.11-CIP W SHOTCRETE TRACKWALL-Bi-Annual.pdf",
+          "formName": "7.11-CIP W SHOTCRETE TRACKWALL-Bi-Annual",
+          "formNameLength": 40,
+          "difference": 20
+        },
+        {
+          "folder": "7",
+          "fileName": "7.11-CIP W SHOTCRETE -Bi-Annual.pdf",
+          "formName": "7.11-CIP W SHOTCRETE -Bi-Annual",
+          "formNameLength": 31,
+          "difference": 11
+        }
+      ]
+    }
+  ]
+}
