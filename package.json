@@ -19,13 +19,16 @@
     "setup": "node -e \"console.log('Please run ./setup.sh (Mac/Linux) or .\\setup.ps1 (Windows)')\"",
     "postinstall": "npx playwright install chromium || true"
   },
-  "keywords": ["automation", "browserbase", "coast"],
+  "keywords": [
+    "automation",
+    "browserbase",
+    "coast"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "csv-parse": "^5.5.2",
     "dotenv": "^16.3.1",
-    "playwright": "^1.40.0",
-    "csv-parse": "^5.5.2"
+    "playwright": "^1.56.1"
   }
 }
-
